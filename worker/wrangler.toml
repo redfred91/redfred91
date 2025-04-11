@@ -1,7 +1,11 @@
+# worker/wrangler.toml
 name = "spotify-now-playing"
-main = "worker/index.js"
-compatibility_date = "2024-04-10"
+main = "src/index.js"
+compatibility_date = "2025-04-11"
 
-[vars]
-ACCESS_TOKEN = ""
-EXPIRES_AT = 0
+[[kv_namespaces]]
+binding = "TOKEN_CACHE"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+[vars]          # <- safe, non‑secret
+CLIENT_ID = "540b1cf18a9a4e5383fd2d5a6a287d80"
