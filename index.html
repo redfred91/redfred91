@@ -3,11 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello Redfred!</title>
+  <title>Yolobox Stream Overlay</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+    }
+    iframe {
+      position: absolute;
+      border: none;
+    }
+    #seOverlay {
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    #spotifyWidget {
+      bottom: 20px;
+      left: 20px;
+      width: 400px;
+      height: 60px;
+      z-index: 2;
+    }
+  </style>
 </head>
 <body>
-  <h1 style="text-align: center; margin-top: 30vh; font-family: sans-serif;">
-    Hello, Redfred! 🎉 GitHub Pages is working.
-  </h1>
+  <!-- Main StreamElements Overlay -->
+  <iframe
+    id="seOverlay"
+    src="https://streamelements.com/overlay/67f078196c25924a6a3223c5/9KUgaAMrSkP02Wq7BTLMeIVM0qFUQ_vESqmPk2SQBSxXt5-i"
+  ></iframe>
+
+  <!-- Spotify NowPlaying Overlay -->
+  <iframe
+    id="spotifyWidget"
+    src="https://widget.nowplaying.site/5Y5ufaevQNSuJfMt"
+  ></iframe>
 </body>
 </html>
