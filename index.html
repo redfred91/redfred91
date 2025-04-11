@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Spotify OAuth Test</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Now Playing Overlay</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body style="background:black; color:white; font-family:sans-serif; text-align:center; padding-top:100px;">
-  <h2>🎵 Connect to Spotify</h2>
-  <a href="https://accounts.spotify.com/authorize?client_id=540b1cf18a9a4e5383fd2d5a6a287d80&response_type=token&redirect_uri=https://redfred91.github.io/redfred91/&scope=user-read-playback-state user-read-currently-playing">
-    <button style="padding: 12px 24px; font-size: 16px;">Login with Spotify</button>
-  </a>
+<body>
+  <div id="auth-container">
+    <button id="login-btn">Login with Spotify</button>
+  </div>
+
+  <div id="now-playing" class="hidden">
+    <img id="album-art" src="" alt="Album Art" />
+    <div id="track-info">
+      <h2 id="track-name">Track</h2>
+      <p id="artist-name">Artist</p>
+    </div>
+  </div>
+
+  <script src="script.js" type="module"></script>
 </body>
 </html>
