@@ -1,0 +1,27 @@
+body {
+  background-color: black;
+  color: white;
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
+}
+
+#album-art {
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+#login-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+}
