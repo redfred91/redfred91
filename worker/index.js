@@ -2,10 +2,12 @@ export default {
   async fetch(request, env, ctx) {
     const now = Date.now();
 
-    if (!env.ACCESS_TOKEN || now > env.EXPIRES_AT) {
+    if (env.ACCESS_TOKEN === "" || now > env.EXPIRES_AT) {
       const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: env.REFRESH_TOKEN,
@@ -21,7 +23,9 @@ export default {
     }
 
     const nowPlayingRes = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-      headers: { Authorization: `Bearer ${env.ACCESS_TOKEN}` },
+      headers: {
+        Authorization: `Bearer ${env.ACCESS_TOKEN}`,
+      },
     });
 
     const nowPlaying = await nowPlayingRes.json();
@@ -29,8 +33,8 @@ export default {
     return new Response(JSON.stringify(nowPlaying), {
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     });
   }
-}
+};
