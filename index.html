@@ -1,24 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Now Playing - Spotify</title>
+  <meta charset="UTF-8" />
+  <title>Now Playing</title>
   <style>
     body {
-      background: black;
-      color: white;
+      background-color: #000;
+      color: #fff;
       font-family: sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      margin: 0;
     }
     #nowplaying {
-      font-size: 1.5rem;
-      background: #333;
-      padding: 10px 20px;
+      padding: 20px;
+      background-color: #333;
       border-radius: 8px;
     }
   </style>
@@ -27,41 +24,51 @@
   <div id="nowplaying">Connecting to Spotify...</div>
 
   <script>
-    const clientId = '540b1cf18a9a4e5383fd2d5a6a287d80'; // <-- Replace with your actual Client ID
+    const clientId = '540b1cf18a9a4e5383fd2d5a6a287d80'; // Replace with your Client ID
     const redirectUri = 'https://redfred91.github.io/redfred91/';
-    const scopes = 'user-read-currently-playing user-read-playback-state';
-
-    function getAccessTokenFromUrl() {
+    const scopes = 'user-read-playback-state user-read-currently-playing';
+    
+    function getAccessTokenFromHash() {
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
       return params.get('access_token');
     }
 
-    async function getCurrentlyPlaying(token) {
-      const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+    function redirectToSpotifyAuth() {
+      const authUrl = `https://accounts.spotify.com/authorize` +
+        `?client_id=${clientId}` +
+        `&response_type=token` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${encodeURIComponent(scopes)}`;
+      window.location.href = authUrl;
+    }
+
+    async function fetchCurrentlyPlaying(token) {
+      const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+        headers: { Authorization: 'Bearer ' + token }
       });
 
-      if (response.status === 204) {
-        document.getElementById('nowplaying').textContent = 'Nothing is currently playing.';
+      if (res.status === 204) {
+        document.getElementById('nowplaying').innerText = 'Nothing is playing.';
         return;
       }
 
-      const data = await response.json();
-      const track = data.item;
-      const artists = track.artists.map(artist => artist.name).join(', ');
-      document.getElementById('nowplaying').textContent = `Now Playing: ${track.name} by ${artists}`;
+      const data = await res.json();
+      if (data && data.item) {
+        const song = data.item.name;
+        const artist = data.item.artists.map(a => a.name).join(', ');
+        document.getElementById('nowplaying').innerText = `Now Playing: ${artist} - ${song}`;
+      } else {
+        document.getElementById('nowplaying').innerText = 'Unable to retrieve song.';
+      }
     }
 
-    const token = getAccessTokenFromUrl();
+    const token = getAccessTokenFromHash();
 
     if (!token) {
-      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&response_type=token&show_dialog=true`;
-      window.location.href = authUrl;
+      redirectToSpotifyAuth();
     } else {
-      getCurrentlyPlaying(token);
+      fetchCurrentlyPlaying(token);
     }
   </script>
 </body>
