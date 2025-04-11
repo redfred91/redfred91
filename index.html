@@ -2,46 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Yolobox Stream Overlay</title>
+  <title>Now Playing | Redfred</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
+    body {
       background: transparent;
-      overflow: hidden;
+      font-family: sans-serif;
+      color: white;
+      font-size: 20px;
+      padding: 20px;
     }
-    iframe {
-      position: absolute;
-      border: none;
+    #nowPlaying {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      border-radius: 10px;
     }
-    #seOverlay {
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 1;
-    }
-    #spotifyWidget {
-      bottom: 20px;
-      left: 20px;
-      width: 400px;
-      height: 60px;
-      z-index: 2;
+    img {
+      height: 64px;
+      margin-right: 10px;
+      vertical-align: middle;
     }
   </style>
 </head>
 <body>
-  <!-- Main StreamElements Overlay -->
-  <iframe
-    id="seOverlay"
-    src="https://streamelements.com/overlay/67f078196c25924a6a3223c5/9KUgaAMrSkP02Wq7BTLMeIVM0qFUQ_vESqmPk2SQBSxXt5-i"
-  ></iframe>
+  <div id="nowPlaying">Connecting to Spotify...</div>
 
-  <!-- Spotify NowPlaying Overlay -->
-  <iframe
-    id="spotifyWidget"
-    src="https://widget.nowplaying.site/5Y5ufaevQNSuJfMt"
-  ></iframe>
+  <script>
+    const clientId = "540b1cf18a9a4e5383fd2d5a6a287d80";
+    const redirectUri = window.location.origin + window.location.pathname;
+    const scopes = "user-read-currently-playing";
+
+    function getAccessToken() {
+      const params = new URLSearchParams(window.location.hash.replace("#", "?"));
+      return params.get("access_token");
+    }
+
+    async function fetchNowPlaying(token) {
+      const res = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+        headers: { Authorization: "Bearer " + token }
+      });
+
+      if (res.status === 204 || res.status > 400) {
+        document.getElementById("nowPlaying").innerHTML = "No music playing.";
+        return;
+      }
+
+      const data = await res.json();
+      const artist = data.item.artists.map(a => a.name).join(", ");
+      const song = data.item.name;
+      const albumArt = data.item.album.images[0].url;
+
+      document.getElementById("nowPlaying").innerHTML = `
+        <img src="${albumArt}" />
+        <strong>${song}</strong> by ${artist}
+      `;
+    }
+
+    (async function main() {
+      let token = getAccessToken();
+      if (!token) {
+        const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes}&response_type=token`;
+        window.location = authUrl;
+      } else {
+        fetchNowPlaying(token);
+        setInterval(() => fetchNowPlaying(token), 10000);
+      }
+    })();
+  </script>
 </body>
 </html>
