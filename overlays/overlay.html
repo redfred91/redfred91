@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spotify Now Playing Overlay</title>
+  <style>
+    /* Full-screen body to help with positioning */
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Arial, sans-serif;
+      overflow: hidden; /* prevent scrollbars in the overlay */
+    }
+    /* Container for the overlay dashboard */
+    #dashboard {
+      position: absolute;
+      top: 20px;         /* adjust as needed */
+      right: 20px;       /* adjust as needed */
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      color: #fff;
+      max-width: 300px;
+    }
+    #dashboard img {
+      width: 100%;
+      border-radius: 4px;
+    }
+    #dashboard h1 {
+      font-size: 20px;
+      margin: 10px 0 0 0;
+    }
+    #dashboard p {
+      margin: 5px 0;
+      font-size: 16px;
+    }
+    #progress-container {
+      background: rgba(255, 255, 255, 0.2);
+      height: 6px;
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      background: #1DB954; /* Spotify green */
+      height: 100%;
+      width: 0%;
+      transition: width 1s linear;
+    }
+  </style>
+</head>
+<body>
+  <div id="dashboard">
+    <img id="album-art" src="" alt="Album Art">
+    <h1 id="track-name">Loading...</h1>
+    <p id="artist-name"></p>
+    <p id="album-name"></p>
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+
+  <script>
+    // URL of your Cloudflare Worker that provides JSON data
+    const endpoint = "https://spotify-now-playing.redfred913.workers.dev";
+
+    // Function to fetch and update the overlay
+    async function updateDashboard() {
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error("Network response error");
+
+        const data = await response.json();
+        if (!data.is_playing || data.currently_playing_type !== "track" || !data.item) {
+          document.getElementById("track-name").textContent = "Not playing";
+          document.getElementById("artist-name").textContent = "";
+          document.getElementById("album-name").textContent = "";
+          document.getElementById("album-art").src = "";
+          document.getElementById("progress-bar").style.width = "0%";
+          return;
+        }
+
+        const track = data.item;
+        document.getElementById("track-name").textContent = track.name;
+        document.getElementById("artist-name").textContent = track.artists.map(a => a.name).join(", ");
+        document.getElementById("album-name").textContent = track.album.name;
+        if (track.album.images && track.album.images.length > 0) {
+          document.getElementById("album-art").src = track.album.images[0].url;
+        }
+
+        if (typeof data.progress_ms === "number" && track.duration_ms) {
+          const percent = (data.progress_ms / track.duration_ms) * 100;
+          document.getElementById("progress-bar").style.width = percent + "%";
+        }
+      } catch (error) {
+        console.error("Error updating dashboard:", error);
+      }
+    }
+
+    // Fetch data every 5 seconds
+    updateDashboard();
+    setInterval(updateDashboard, 5000);
+  </script>
+</body>
+</html>
