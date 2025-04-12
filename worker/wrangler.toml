@@ -7,8 +7,5 @@ compatibility_date = "2025-04-11"
 binding = "TOKEN_CACHE"
 id = "be6b596f04df46e98104afd2a2921a7e"
 
-wrangler kv:key put --namespace TOKEN_CACHE refresh_token "AQC967F7G-kJeQc1y9_AsEgALSqUhXSs7H4k4vYCt9ViJ8XSFbmiebqJ3JN_rrdhI-yv0wyijLoq9L_47NuWJy-9Jv56l4_mEnv37l0c4nBz0TeB8VuSSX8onXBWnAfTPIk"
-wrangler secret put REFRESH_TOKEN  # optional fallback
-
-[vars]          # <- safe, non‑secret
+[vars]              # non‑secret values
 CLIENT_ID = "540b1cf18a9a4e5383fd2d5a6a287d80"
