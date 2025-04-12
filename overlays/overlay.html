@@ -2,48 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Spotify Now Playing Overlay</title>
+  <title>Master Overlay</title>
   <style>
-    /* Full-screen body to help with positioning */
+    /* General reset */
     body {
       margin: 0;
       padding: 0;
+      overflow: hidden;
       background: transparent;
       font-family: Arial, sans-serif;
-      overflow: hidden; /* prevent scrollbars in the overlay */
     }
-    /* Container for the overlay dashboard */
-    #dashboard {
+    /* Streamelements overlay iframe takes the full background */
+    #se-overlay {
       position: absolute;
-      top: 20px;         /* adjust as needed */
-      right: 20px;       /* adjust as needed */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 1;
+    }
+    /* Spotify widget – positioned as desired (here, bottom-right) */
+    #spotify-widget {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 300px;
       background: rgba(0, 0, 0, 0.7);
       padding: 15px;
       border-radius: 8px;
-      color: #fff;
-      max-width: 300px;
+      z-index: 2;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
-    #dashboard img {
+    #spotify-widget img {
       width: 100%;
       border-radius: 4px;
     }
-    #dashboard h1 {
-      font-size: 20px;
-      margin: 10px 0 0 0;
+    #spotify-widget h1 {
+      font-size: 18px;
+      margin: 8px 0 4px 0;
     }
-    #dashboard p {
-      margin: 5px 0;
-      font-size: 16px;
+    #spotify-widget p {
+      font-size: 14px;
+      margin: 4px 0;
     }
     #progress-container {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255,255,255,0.2);
       height: 6px;
       border-radius: 3px;
       margin-top: 8px;
       overflow: hidden;
     }
     #progress-bar {
-      background: #1DB954; /* Spotify green */
+      background: #1DB954;
       height: 100%;
       width: 0%;
       transition: width 1s linear;
@@ -51,7 +62,11 @@
   </style>
 </head>
 <body>
-  <div id="dashboard">
+  <!-- Streamelements overlay loaded via iframe -->
+  <iframe id="se-overlay" src="https://streamelements.com/overlay/67f078196c25924a6a3223c5/9KUgaAMrSkP02Wq7BTLMeIVM0qFUQ_vESqmPk2SQBSxXt5-i" scrolling="no"></iframe>
+
+  <!-- Spotify Now Playing widget -->
+  <div id="spotify-widget">
     <img id="album-art" src="" alt="Album Art">
     <h1 id="track-name">Loading...</h1>
     <p id="artist-name"></p>
@@ -62,16 +77,16 @@
   </div>
 
   <script>
-    // URL of your Cloudflare Worker that provides JSON data
+    // URL of your Cloudflare Worker supplying Spotify data
     const endpoint = "https://spotify-now-playing.redfred913.workers.dev";
 
-    // Function to fetch and update the overlay
-    async function updateDashboard() {
+    // Function to fetch and update the Spotify widget
+    async function updateSpotify() {
       try {
         const response = await fetch(endpoint);
         if (!response.ok) throw new Error("Network response error");
-
         const data = await response.json();
+        // Check if a track is playing
         if (!data.is_playing || data.currently_playing_type !== "track" || !data.item) {
           document.getElementById("track-name").textContent = "Not playing";
           document.getElementById("artist-name").textContent = "";
@@ -88,19 +103,18 @@
         if (track.album.images && track.album.images.length > 0) {
           document.getElementById("album-art").src = track.album.images[0].url;
         }
-
         if (typeof data.progress_ms === "number" && track.duration_ms) {
           const percent = (data.progress_ms / track.duration_ms) * 100;
           document.getElementById("progress-bar").style.width = percent + "%";
         }
       } catch (error) {
-        console.error("Error updating dashboard:", error);
+        console.error("Error fetching Spotify data:", error);
       }
     }
 
-    // Fetch data every 5 seconds
-    updateDashboard();
-    setInterval(updateDashboard, 5000);
+    // Initial fetch and then polling every 5 seconds
+    updateSpotify();
+    setInterval(updateSpotify, 5000);
   </script>
 </body>
 </html>
