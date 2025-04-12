@@ -46,7 +46,6 @@ async function refreshToken(env, ctx) {
       grant_type: "refresh_token",
       refresh_token: env.REFRESH_TOKEN,
       client_id: env.CLIENT_ID,
-      client_secret: env.CLIENT_SECRET
     })
   });
 
