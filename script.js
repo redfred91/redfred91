@@ -1,6 +1,7 @@
 const clientId = '540b1cf18a9a4e5383fd2d5a6a287d80'; // From https://developer.spotify.com/dashboard
 const redirectUri = 'https://redfred91.github.io/redfred91/'; // GitHub Pages URL
 const scopes = ['user-read-currently-playing', 'user-read-playback-state'];
+const workerBaseUrl = 'https://spotify-now-playing.redfred913.workers.dev';
 
 function generateRandomString(length) {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -56,7 +57,28 @@ async function fetchAccessToken(code) {
   });
 
   const data = await response.json();
-  return data.access_token;
+
+  if (!response.ok || !data.access_token) {
+    throw new Error(data.error_description || 'Failed to exchange authorization code');
+  }
+
+  if (data.refresh_token && data.expires_in) {
+    try {
+      await fetch(`${workerBaseUrl}/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          refresh_token: data.refresh_token,
+          access_token: data.access_token,
+          expires_in: data.expires_in,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to seed token cache', error);
+    }
+  }
+
+  return data;
 }
 
 async function fetchNowPlaying(token) {
@@ -85,6 +107,6 @@ const params = new URLSearchParams(window.location.search);
 const code = params.get('code');
 if (code) {
   fetchAccessToken(code)
-    .then(fetchNowPlaying)
+    .then(data => fetchNowPlaying(data.access_token))
     .catch(console.error);
 }
