@@ -16,22 +16,76 @@ export default {
       return handleTokenSeed(request, env, ctx);
     }
 
-    // 1. Get or refresh the access token
-    const accessToken = await getAccessToken(env, ctx);
+    try {
+      // 1. Get or refresh the access token
+      const accessToken = await getAccessToken(env, ctx);
 
-    // 2. Fetch currently playing track from Spotify
-    const response = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+      // 2. Fetch currently playing track from Spotify
+      const response = await fetch(
+        "https://api.spotify.com/v1/me/player/currently-playing",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        }
+      );
 
-    // 3. Return the JSON with CORS enabled
-    return new Response(response.body, {
-      status: response.status,
-      headers: {
-        ...CORS_HEADERS,
-        "Cache-Control": "no-store"
+      if (response.status === 204) {
+        return new Response(JSON.stringify({ is_playing: false }), {
+          status: 200,
+          headers: {
+            ...CORS_HEADERS,
+            "Cache-Control": "no-store",
+            "Content-Type": "application/json"
+          }
+        });
       }
-    });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          "Spotify API error",
+          response.status,
+          response.statusText,
+          errorText
+        );
+
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch currently playing track" }),
+          {
+            status: 502,
+            headers: {
+              ...CORS_HEADERS,
+              "Cache-Control": "no-store",
+              "Content-Type": "application/json"
+            }
+          }
+        );
+      }
+
+      // 3. Return the JSON with CORS enabled
+      const contentType = response.headers.get("Content-Type") ?? "application/json";
+
+      return new Response(response.body, {
+        status: response.status,
+        headers: {
+          ...CORS_HEADERS,
+          "Cache-Control": "no-store",
+          "Content-Type": contentType
+        }
+      });
+    } catch (error) {
+      console.error("Worker failed to fulfill request", error);
+      return new Response(
+        JSON.stringify({ error: "Spotify token refresh failed" }),
+        {
+          status: 503,
+          headers: {
+            ...CORS_HEADERS,
+            "Cache-Control": "no-store",
+            "Content-Type": "application/json"
+          }
+        }
+      );
+    }
   }
 };
 
@@ -125,17 +179,37 @@ async function refreshToken(env, ctx) {
     throw new Error("No refresh token available in KV — please re-authenticate.");
   }
 
+  if (!env.CLIENT_SECRET) {
+    throw new Error("CLIENT_SECRET is not configured in the Worker environment.");
+  }
+
+  const basicAuth = btoa(`${env.CLIENT_ID}:${env.CLIENT_SECRET}`);
+
   const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${basicAuth}`
+    },
     body: new URLSearchParams({
       grant_type: "refresh_token",
-      refresh_token: refreshTokenValue,
-      client_id: env.CLIENT_ID
+      refresh_token: refreshTokenValue
     })
   });
 
-  const data = await res.json();
+  const rawBody = await res.text();
+  let data;
+  try {
+    data = rawBody ? JSON.parse(rawBody) : {};
+  } catch (parseError) {
+    console.error("Failed to parse Spotify token response", parseError, rawBody);
+    throw new Error("Failed to refresh token: unexpected response body");
+  }
+
+  if (!res.ok) {
+    console.error("Spotify token refresh error", res.status, data);
+    throw new Error("Failed to refresh token: " + JSON.stringify(data));
+  }
 
   // 🔍 Log for debugging only (disable in production)
   console.log("REFRESH-RESPONSE", data);
