@@ -84,15 +84,30 @@
     async function updateSpotify() {
       try {
         const response = await fetch(endpoint);
-        if (!response.ok) throw new Error("Network response error");
-        const data = await response.json();
+
+        if (response.status === 204) {
+          handleNotPlaying();
+          return;
+        }
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Network response error: ${response.status} ${errorText}`);
+        }
+
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          throw new Error("Failed to parse response JSON");
+        }
+
+        if (!data || data.error) {
+          throw new Error(data?.error || "Unknown error from API");
+        }
         // Check if a track is playing
         if (!data.is_playing || data.currently_playing_type !== "track" || !data.item) {
-          document.getElementById("track-name").textContent = "Not playing";
-          document.getElementById("artist-name").textContent = "";
-          document.getElementById("album-name").textContent = "";
-          document.getElementById("album-art").src = "";
-          document.getElementById("progress-bar").style.width = "0%";
+          handleNotPlaying();
           return;
         }
 
@@ -109,7 +124,16 @@
         }
       } catch (error) {
         console.error("Error fetching Spotify data:", error);
+        handleNotPlaying();
       }
+    }
+
+    function handleNotPlaying() {
+      document.getElementById("track-name").textContent = "Not playing";
+      document.getElementById("artist-name").textContent = "";
+      document.getElementById("album-name").textContent = "";
+      document.getElementById("album-art").src = "";
+      document.getElementById("progress-bar").style.width = "0%";
     }
 
     // Initial fetch and then polling every 5 seconds
